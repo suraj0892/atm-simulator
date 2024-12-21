@@ -27,9 +27,8 @@ public class UserService {
         validateForLogin();
         Optional<User> userOptional = userRepository.findByUserName(userName);
         if (userOptional.isPresent()) {
-           setCurrentUser(userOptional.get());
-        }
-        else{
+            setCurrentUser(userOptional.get());
+        } else {
             setCurrentUser(userRepository.save(userName));
         }
         accountService.createAccount(getLoggedInUser());
@@ -37,13 +36,13 @@ public class UserService {
 
     public String logout() {
         validateForLogout();
-        final String loggedOutUserName =  getLoggedInUser().getUserName();
+        final String loggedOutUserName = getLoggedInUser().getUserName();
         setCurrentUser(null);
         return loggedOutUserName;
     }
 
     private void validateForLogout() {
-        if(getLoggedInUser() == null) {
+        if (getLoggedInUser() == null) {
             throw new BusinessException("No Active logged in user found");
         }
     }

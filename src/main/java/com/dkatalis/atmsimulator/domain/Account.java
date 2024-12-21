@@ -1,6 +1,7 @@
 package com.dkatalis.atmsimulator.domain;
 
 import java.util.Map;
+import java.util.Objects;
 
 public class Account {
 
@@ -20,5 +21,22 @@ public class Account {
 
     public Integer getBalance() {
         return balance;
+    }
+
+    public Map<User, Integer> getCreditMap() {
+        return creditMap;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Account account = (Account) o;
+        return user.equals(account.user);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(user);
     }
 }
