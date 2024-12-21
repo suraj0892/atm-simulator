@@ -33,6 +33,11 @@ public class AccountService {
         return optionalAccount.get();
     }
 
+    public boolean checkAccountIfPresentByUser(User user) {
+        Optional<Account> optionalAccount = accountRepository.getAccountByUser(user);
+        return optionalAccount.isPresent();
+    }
+
     public void update(Account outdatedAccount, Integer updatedBalance) {
         Account updatedAccount = new Account(outdatedAccount.getUser(), updatedBalance, outdatedAccount.getCreditMap());
         accountRepository.update(outdatedAccount, updatedAccount);

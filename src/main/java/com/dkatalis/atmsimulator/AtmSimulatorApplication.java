@@ -24,17 +24,46 @@ public class AtmSimulatorApplication {
 
         transactionService.deposit(100);
         System.out.println("Your balance is $" + userService.getBalance());
+
+        String loggedOutUser = userService.logout();
+        System.out.println("Good Bye, " + loggedOutUser);
+
+        System.out.println("---------------------------------------------");
+
+        userService.login("Bob");
+        System.out.println("Hello, " + userService.getLoggedInUser().getUserName());
+        System.out.println("Your balance is $" + userService.getBalance());
+
         transactionService.deposit(100);
         System.out.println("Your balance is $" + userService.getBalance());
 
-        transactionService.withdraw(50);
-        System.out.println("Your balance is $" + userService.getBalance());
-//
-//        user = transactionService.withdraw(10);
-//        System.out.println("Your balance is $" + user.getBalance());
-//
-        String loggedOutUser = userService.logout();
+        loggedOutUser = userService.logout();
         System.out.println("Good Bye, " + loggedOutUser);
+
+        System.out.println("---------------------------------------------");
+
+
+        userService.login("Alice");
+        System.out.println("Hello, " + userService.getLoggedInUser().getUserName());
+        System.out.println("Your balance is $" + userService.getBalance());
+
+        transactionService.transfer("Bob", 50);
+        System.out.println("Your balance is $" + userService.getBalance());
+
+        loggedOutUser = userService.logout();
+        System.out.println("Good Bye, " + loggedOutUser);
+
+        System.out.println("---------------------------------------------");
+
+
+        userService.login("Bob");
+        System.out.println("Hello, " + userService.getLoggedInUser().getUserName());
+        System.out.println("Your balance is $" + userService.getBalance());
+
+        loggedOutUser = userService.logout();
+        System.out.println("Good Bye, " + loggedOutUser);
+
+        System.out.println("---------------------------------------------");
 
     }
 }

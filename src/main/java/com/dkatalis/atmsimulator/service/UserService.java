@@ -2,6 +2,7 @@ package com.dkatalis.atmsimulator.service;
 
 import com.dkatalis.atmsimulator.domain.User;
 import com.dkatalis.atmsimulator.exception.BusinessException;
+import com.dkatalis.atmsimulator.exception.UserNotFoundException;
 import com.dkatalis.atmsimulator.repository.UserRepository;
 
 import java.util.Optional;
@@ -29,10 +30,24 @@ public class UserService {
         if (userOptional.isPresent()) {
             setCurrentUser(userOptional.get());
         } else {
-            User user =  new User(userName);
+            User user = new User(userName);
             setCurrentUser(userRepository.save(user));
         }
-        accountService.createAccount(getLoggedInUser());
+        createAccountIfDoesNotExist();
+    }
+
+    private void createAccountIfDoesNotExist() {
+        if (!accountService.checkAccountIfPresentByUser(getLoggedInUser())) {
+            accountService.createAccount(getLoggedInUser());
+        }
+    }
+
+    public User getUserByUserName(String userName) {
+        Optional<User> userOptional = userRepository.findByUserName(userName);
+        if (userOptional.isPresent()) {
+            return userOptional.get();
+        }
+        throw new UserNotFoundException("Invalid User");
     }
 
     public String logout() {

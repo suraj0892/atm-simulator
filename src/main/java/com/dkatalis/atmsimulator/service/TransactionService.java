@@ -2,6 +2,8 @@ package com.dkatalis.atmsimulator.service;
 
 import com.dkatalis.atmsimulator.domain.Account;
 import com.dkatalis.atmsimulator.domain.User;
+import com.dkatalis.atmsimulator.exception.BusinessException;
+
 
 public class TransactionService {
 
@@ -16,15 +18,35 @@ public class TransactionService {
     public void deposit(Integer amount) {
         User loggedInUser = userService.getLoggedInUser();
         Account userAccount = accountService.getAccount(loggedInUser);
-        Integer newBalance = userAccount.getBalance() + amount;
-        accountService.update(userAccount, newBalance);
+
+        deposit(amount, userAccount);
     }
 
     public void withdraw(Integer amount) {
         User loggedInUser = userService.getLoggedInUser();
         Account userAccount = accountService.getAccount(loggedInUser);
-        Integer newBalance = userAccount.getBalance() - amount;
-        accountService.update(userAccount, newBalance);
+        if (userAccount.getBalance() <= 0) {
+            throw new BusinessException("No enough funds to withdraw");
+        }
+        withdraw(amount, userAccount);
     }
 
+    public void transfer(String userName, Integer amount) {
+        User loggedInUser = userService.getLoggedInUser();
+        User beneficiary = userService.getUserByUserName(userName);
+        Account loggedInUserAccount = accountService.getAccount(loggedInUser);
+        Account beneficiaryAccount =  accountService.getAccount(beneficiary);
+        withdraw(amount, loggedInUserAccount);
+        deposit(amount, beneficiaryAccount);
+    }
+
+    private void deposit(Integer amount, Account account) {
+        Integer newBalance = account.getBalance() + amount;
+        accountService.update(account, newBalance);
+    }
+
+    private void withdraw(Integer amount, Account account) {
+        Integer newBalance = account.getBalance() - amount;
+        accountService.update(account, newBalance);
+    }
 }
