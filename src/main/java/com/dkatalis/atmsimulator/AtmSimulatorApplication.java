@@ -26,9 +26,8 @@ public class AtmSimulatorApplication {
 //        user = transactionService.withdraw(10);
 //        System.out.println("Your balance is $" + user.getBalance());
 //
-//        String loggedOutUser = userService.logout();
-//        System.out.println("Good Bye, " + loggedOutUser);
-
+        String loggedOutUser = userService.logout();
+        System.out.println("Good Bye, " + loggedOutUser);
 
     }
 }
