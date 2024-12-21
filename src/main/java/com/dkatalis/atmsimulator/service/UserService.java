@@ -29,7 +29,8 @@ public class UserService {
         if (userOptional.isPresent()) {
             setCurrentUser(userOptional.get());
         } else {
-            setCurrentUser(userRepository.save(userName));
+            User user =  new User(userName);
+            setCurrentUser(userRepository.save(user));
         }
         accountService.createAccount(getLoggedInUser());
     }

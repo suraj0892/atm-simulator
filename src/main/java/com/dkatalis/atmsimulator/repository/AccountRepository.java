@@ -2,10 +2,7 @@ package com.dkatalis.atmsimulator.repository;
 
 import com.dkatalis.atmsimulator.domain.Account;
 import com.dkatalis.atmsimulator.domain.User;
-import com.dkatalis.atmsimulator.exception.AccountNotFoundException;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 

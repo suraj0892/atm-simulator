@@ -17,8 +17,7 @@ public class UserRepository {
         return users.stream().filter(user -> user.getUserName().equals(userName)).findFirst();
     }
 
-    public User save(String userName) {
-        User user =  new User(userName);
+    public User save(User user) {
         users.add(user);
         return user;
     }
