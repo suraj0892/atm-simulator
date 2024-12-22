@@ -67,6 +67,7 @@ public class TransactionService {
         Integer amountDebitedForBeneficiary = debitFromLoggedInUser(amount, loggedInUserAccount, beneficiary);
 
         creditToBeneficiary(amount, amountDebitedForBeneficiary, beneficiaryAccount);
+        System.out.println("Transferred $" + amountDebitedForBeneficiary + " to " + userName);
     }
 
 
@@ -75,25 +76,24 @@ public class TransactionService {
         Integer beneficiaryBalance = beneficaryAccount.getBalance();
         Integer pendingAmountFromSource = beneficaryAccount.getCreditMap().get(loggedInUser);
 
-        if(pendingAmountFromSource != null && pendingAmountFromSource != 0) {
+        if (pendingAmountFromSource != null && pendingAmountFromSource != 0) {
             if (pendingAmountFromSource > 0) {
                 if (Math.abs(pendingAmountFromSource) > receivedAmount) {
                     pendingAmountFromSource = pendingAmountFromSource - receivedAmount;
+                    beneficiaryBalance = beneficiaryBalance + receivedAmount;
                 } else {
                     beneficiaryBalance = beneficiaryBalance + receivedAmount;
                     pendingAmountFromSource = 0;
                 }
-            }
-            else {
-                if(Math.abs(pendingAmountFromSource) >  actualAmount){
+            } else {
+                if (Math.abs(pendingAmountFromSource) > actualAmount) {
                     pendingAmountFromSource = pendingAmountFromSource + actualAmount;
-                }else {
+                } else {
                     beneficiaryBalance = actualAmount + pendingAmountFromSource;
                     pendingAmountFromSource = 0;
                 }
             }
-        }
-        else {
+        } else {
             if (actualAmount > receivedAmount) {
                 beneficiaryBalance = beneficiaryBalance + receivedAmount;
                 pendingAmountFromSource = actualAmount - receivedAmount;
@@ -103,49 +103,66 @@ public class TransactionService {
             }
         }
 
-        updatedCreditMap (pendingAmountFromSource, beneficaryAccount, loggedInUser);
+        updatedCreditMap(pendingAmountFromSource, beneficaryAccount, loggedInUser);
         accountService.update(beneficaryAccount, beneficiaryBalance);
     }
 
-    private Integer debitFromLoggedInUser(Integer amount, Account loggedInUserAccount, User beneficiary) {
+    private Integer debitFromLoggedInUser(Integer transferAmount, Account loggedInUserAccount, User beneficiary) {
         Integer loggedInUserAccountBalance = loggedInUserAccount.getBalance();
         Integer pendingAmountToBeneficiary = loggedInUserAccount.getCreditMap().get(beneficiary);
         Integer debitedAmount;
-        if (pendingAmountToBeneficiary != null && pendingAmountToBeneficiary < 0) {
-            if (Math.abs(pendingAmountToBeneficiary) > amount) {
-                debitedAmount = amount;
-                pendingAmountToBeneficiary = pendingAmountToBeneficiary + amount;
-                loggedInUserAccountBalance = 0;
-            } else {
-                debitedAmount = Math.abs(pendingAmountToBeneficiary);
-                loggedInUserAccountBalance = loggedInUserAccountBalance + pendingAmountToBeneficiary;
-                pendingAmountToBeneficiary = 0;
-            }
-        } else if(pendingAmountToBeneficiary != null && pendingAmountToBeneficiary > 0) {
-            if (Math.abs(pendingAmountToBeneficiary) > amount) {
-                debitedAmount = amount;
-                pendingAmountToBeneficiary = pendingAmountToBeneficiary - amount;
-            } else {
-                debitedAmount = Math.abs(pendingAmountToBeneficiary);
-                loggedInUserAccountBalance =  loggedInUserAccountBalance - amount + pendingAmountToBeneficiary;
-                pendingAmountToBeneficiary = 0;
-            }
-        }
-        else {
-            if (loggedInUserAccountBalance > amount) {
-                loggedInUserAccountBalance = loggedInUserAccountBalance - amount;
-                pendingAmountToBeneficiary = 0;
-                debitedAmount = amount;
-            } else {
-                debitedAmount = Math.abs(loggedInUserAccountBalance);
-                pendingAmountToBeneficiary = loggedInUserAccountBalance - amount;
-                loggedInUserAccountBalance = 0;
-            }
+        Integer updatedPendingAmountToBeneficiary;
+        Integer updateAccountbalance;
+
+        if (pendingAmountToBeneficiary != null && pendingAmountToBeneficiary != 0) {
+            debitedAmount = getDebitedAmountForDebt(pendingAmountToBeneficiary, transferAmount);
+            updatedPendingAmountToBeneficiary = getUpdatedPendingAmountForDebt(pendingAmountToBeneficiary, transferAmount);
+            updateAccountbalance = getUpdatedBalanceForDebt(pendingAmountToBeneficiary, transferAmount, loggedInUserAccountBalance);
+        } else {
+            boolean isBalanceGreaterThanTransferAmount = loggedInUserAccountBalance > transferAmount;
+            debitedAmount = (isBalanceGreaterThanTransferAmount) ? transferAmount : Math.abs(loggedInUserAccountBalance);
+            updatedPendingAmountToBeneficiary = (isBalanceGreaterThanTransferAmount) ? 0 : loggedInUserAccountBalance - transferAmount;
+            updateAccountbalance = (isBalanceGreaterThanTransferAmount) ? loggedInUserAccountBalance - transferAmount : 0;
         }
 
-        updatedCreditMap (pendingAmountToBeneficiary, loggedInUserAccount, beneficiary);
-        accountService.update(loggedInUserAccount, loggedInUserAccountBalance);
+        updatedCreditMap(updatedPendingAmountToBeneficiary, loggedInUserAccount, beneficiary);
+        accountService.update(loggedInUserAccount, updateAccountbalance);
         return debitedAmount;
+    }
+
+    private Integer getUpdatedBalanceForDebt(Integer pendingAmount, Integer transferAmount, Integer currentBalance) {
+        if (Math.abs(pendingAmount) > transferAmount) {
+            if (pendingAmount < 0) {
+                return 0;
+            } else {
+                return currentBalance;
+            }
+        } else {
+            if (pendingAmount < 0) {
+                return currentBalance + pendingAmount;
+            } else {
+                return currentBalance - transferAmount + pendingAmount;
+            }
+        }
+    }
+
+    private Integer getUpdatedPendingAmountForDebt(Integer pendingAmount, Integer transferAmount) {
+
+        if (Math.abs(pendingAmount) > transferAmount) {
+            if (pendingAmount < 0) {
+                return pendingAmount + transferAmount;
+            } else {
+                return pendingAmount - transferAmount;
+            }
+        }
+        return 0;
+    }
+
+    private Integer getDebitedAmountForDebt(Integer pendingAmount, Integer transferAmount) {
+        if (Math.abs(pendingAmount) > transferAmount) {
+            return transferAmount;
+        }
+        return Math.abs(pendingAmount);
     }
 
     private void updatedCreditMap(Integer pendingAmount, Account account, User user) {
@@ -157,7 +174,6 @@ public class TransactionService {
 
     }
 
-
     private Integer calculateNewBalance(TransactionType transactionType, Integer amount, Account account) {
         if (transactionType == TransactionType.CREDIT) {
             return account.getBalance() + amount;
@@ -166,3 +182,4 @@ public class TransactionService {
     }
 
 }
+
