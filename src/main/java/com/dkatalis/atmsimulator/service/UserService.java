@@ -1,10 +1,12 @@
 package com.dkatalis.atmsimulator.service;
 
+import com.dkatalis.atmsimulator.domain.Account;
 import com.dkatalis.atmsimulator.domain.User;
 import com.dkatalis.atmsimulator.exception.BusinessException;
 import com.dkatalis.atmsimulator.exception.UserNotFoundException;
 import com.dkatalis.atmsimulator.repository.UserRepository;
 
+import java.util.Map;
 import java.util.Optional;
 
 public class UserService {
@@ -77,4 +79,22 @@ public class UserService {
         this.loggedInUser = user;
     }
 
+    public void printWelcomeMessage() {
+        System.out.println("Hello, " + getLoggedInUser().getUserName());
+    }
+
+    public void printAccountStatement() {
+        System.out.println("Your balance is $" + getBalance());
+
+        Account account = accountService.getAccount(getLoggedInUser());
+
+        for (Map.Entry<User, Integer> entry: account.getCreditMap().entrySet()) {
+            if (entry.getValue() < 0) {
+                System.out.println("Owed $" + Math.abs(entry.getValue()) + " to " + entry.getKey().getUserName());
+            }
+            else {
+                System.out.println("Owed $" + Math.abs(entry.getValue()) + " from " + entry.getKey().getUserName());
+            }
+        }
+    }
 }

@@ -7,6 +7,7 @@ import com.dkatalis.atmsimulator.service.TransactionService;
 import com.dkatalis.atmsimulator.service.UserService;
 
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class AtmSimulatorApplication {
 
@@ -17,53 +18,74 @@ public class AtmSimulatorApplication {
         final AccountService accountService = new AccountService(accountRepository);
         final UserService userService = new UserService(userRepository, accountService);
         final TransactionService transactionService = new TransactionService(userService, accountService);
+        Scanner scanner = new Scanner(System.in);
 
-        userService.login("Alice");
-        System.out.println("Hello, " + userService.getLoggedInUser().getUserName());
-        System.out.println("Your balance is $" + userService.getBalance());
+        while (true) {
+            System.out.print("$ ");
+            String command = scanner.nextLine().trim();
+            String[] commandParts = command.split(" ");
 
-        transactionService.deposit(100);
-        System.out.println("Your balance is $" + userService.getBalance());
+            if (commandParts.length == 0) {
+                System.out.println("Invalid command. Try again.");
+                continue;
+            }
 
-        String loggedOutUser = userService.logout();
-        System.out.println("Good Bye, " + loggedOutUser);
-
-        System.out.println("---------------------------------------------");
-
-        userService.login("Bob");
-        System.out.println("Hello, " + userService.getLoggedInUser().getUserName());
-        System.out.println("Your balance is $" + userService.getBalance());
-
-        transactionService.deposit(100);
-        System.out.println("Your balance is $" + userService.getBalance());
-
-        loggedOutUser = userService.logout();
-        System.out.println("Good Bye, " + loggedOutUser);
-
-        System.out.println("---------------------------------------------");
-
-
-        userService.login("Alice");
-        System.out.println("Hello, " + userService.getLoggedInUser().getUserName());
-        System.out.println("Your balance is $" + userService.getBalance());
-
-        transactionService.transfer("Bob", 50);
-        System.out.println("Your balance is $" + userService.getBalance());
-
-        loggedOutUser = userService.logout();
-        System.out.println("Good Bye, " + loggedOutUser);
-
-        System.out.println("---------------------------------------------");
-
-
-        userService.login("Bob");
-        System.out.println("Hello, " + userService.getLoggedInUser().getUserName());
-        System.out.println("Your balance is $" + userService.getBalance());
-
-        loggedOutUser = userService.logout();
-        System.out.println("Good Bye, " + loggedOutUser);
-
-        System.out.println("---------------------------------------------");
-
+            switch (commandParts[0].toLowerCase()) {
+                case "login":
+                    if (commandParts.length == 2) {
+                        userService.login(commandParts[1]);
+                        userService.printWelcomeMessage();
+                        userService.printAccountStatement();
+                    } else {
+                        System.out.println("Usage: login [name]");
+                    }
+                    break;
+                case "deposit":
+                    if (commandParts.length == 2) {
+                        try {
+                            Integer amount = Integer.parseInt(commandParts[1]);
+                            transactionService.deposit(amount);
+                            userService.printAccountStatement();
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid amount.");
+                        }
+                    } else {
+                        System.out.println("Usage: deposit [amount]");
+                    }
+                    break;
+                case "withdraw":
+                    if (commandParts.length == 2) {
+                        try {
+                            Integer amount = Integer.parseInt(commandParts[1]);
+                            transactionService.withdraw(amount);
+                            userService.printAccountStatement();
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid amount.");
+                        }
+                    } else {
+                        System.out.println("Usage: withdraw [amount]");
+                    }
+                    break;
+                case "transfer":
+                    if (commandParts.length == 3) {
+                        try {
+                            Integer amount = Integer.parseInt(commandParts[2]);
+                            transactionService.transfer(commandParts[1], amount);
+                            userService.printAccountStatement();
+                        } catch (NumberFormatException e) {
+                            System.out.println("Invalid amount.");
+                        }
+                    } else {
+                        System.out.println("Usage: transfer [target] [amount]");
+                    }
+                    break;
+                case "logout":
+                    String loggedOutUser = userService.logout();
+                    System.out.println("Good Bye, " + loggedOutUser);
+                    break;
+                default:
+                    System.out.println("Invalid command. Try again.");
+            }
+        }
     }
 }
