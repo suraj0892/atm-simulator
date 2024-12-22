@@ -20,46 +20,6 @@ public class AtmSimulatorApplication {
         final TransactionService transactionService = new TransactionService(userService, accountService);
         Scanner scanner = new Scanner(System.in);
 
-//        userService.login("alice");
-//        userService.printWelcomeMessage();
-//        userService.printAccountStatement();
-//
-//        transactionService.deposit(100);
-//        userService.printAccountStatement();
-//
-//        userService.logout();
-//
-//        userService.login("bob");
-//        userService.printWelcomeMessage();
-//        userService.printAccountStatement();
-//
-//        transactionService.deposit(80);
-//        userService.printAccountStatement();
-//
-//        transactionService.transfer("alice", 50);
-//        userService.printAccountStatement();
-//
-//        transactionService.transfer("alice", 100);
-//        userService.printAccountStatement();
-//
-//        userService.logout();
-//
-//        userService.login("alice");
-//        userService.printWelcomeMessage();
-//        userService.printAccountStatement();
-//
-//        transactionService.transfer("bob", 50);
-//        userService.printAccountStatement();
-////        transactionService.transfer("bob", 30);
-////        userService.printAccountStatement();
-//        userService.logout();
-//
-//        userService.login("bob");
-//        userService.printWelcomeMessage();
-//        userService.printAccountStatement();
-//
-//        userService.logout();
-
         while (true) {
             System.out.print("$ ");
             String command = scanner.nextLine().trim();
@@ -122,6 +82,14 @@ public class AtmSimulatorApplication {
                 case "logout":
                     String loggedOutUser = userService.logout();
                     System.out.println("Good Bye, " + loggedOutUser);
+                    break;
+                case "exit":
+                    if(userService.getLoggedInUser() == null) {
+                        System.exit(0);
+                    }
+                    else {
+                       System.out.println("please logout to exit");
+                    }
                     break;
                 default:
                     System.out.println("Invalid command. Try again.");
