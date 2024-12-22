@@ -5,9 +5,7 @@ import com.dkatalis.atmsimulator.domain.User;
 import com.dkatalis.atmsimulator.enums.TransactionType;
 import com.dkatalis.atmsimulator.exception.BusinessException;
 
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 
 
 public class TransactionService {
@@ -25,17 +23,21 @@ public class TransactionService {
         Account userAccount = accountService.getAccount(loggedInUser);
         Integer newBalance = calculateNewBalance(TransactionType.CREDIT, amount, userAccount);
         accountService.update(userAccount, newBalance);
+        settleDebtsForPendingCredits(userAccount);
+    }
 
+    private void settleDebtsForPendingCredits(Account userAccount) {
+        Integer newBalance;
         for (Map.Entry<User, Integer> entry : userAccount.getCreditMap().entrySet()) {
             newBalance = userService.getBalance();
-            Integer transferAmount = entry.getValue();
-            User user = entry.getKey();
+            if(newBalance <= 0) {
+                break;
+            }
+            final Integer transferAmount = entry.getValue();
+            final User user = entry.getKey();
             if (transferAmount < 0) {
-                if (newBalance > Math.abs(transferAmount)) {
-                    transfer(user.getUserName(), Math.abs(transferAmount));
-                } else {
-                    transfer(user.getUserName(), newBalance);
-                }
+                Integer amountToTransfer = (newBalance > Math.abs(transferAmount)) ? Math.abs(transferAmount) : newBalance;
+                transfer(user.getUserName(), amountToTransfer);
             }
         }
     }
@@ -55,82 +57,103 @@ public class TransactionService {
     public void transfer(String userName, Integer amount) {
         User loggedInUser = userService.getLoggedInUser();
         Account loggedInUserAccount = accountService.getAccount(loggedInUser);
-
-        validate(userName, loggedInUser, loggedInUserAccount);
         User beneficiary = userService.getUserByUserName(userName);
-        Account beneficiaryAccount =  accountService.getAccount(beneficiary);
+        Account beneficiaryAccount = accountService.getAccount(beneficiary);
 
-        Integer loggedInUserNewBalance = calculateNewBalance(TransactionType.DEBIT, amount, loggedInUserAccount);
-        Integer beneficiaryNewBalance = calculateNewBalance(TransactionType.CREDIT, amount, beneficiaryAccount);
+        if (loggedInUserAccount.getBalance() < 0) {
+            throw new BusinessException("No Enough Funds to transfer exception");
+        }
 
-        if (loggedInUserNewBalance <= 0) {
-            accountService.update(loggedInUserAccount, 0);
-            Map<User, Integer> creditMap = loggedInUserAccount.getCreditMap();
-            if (creditMap.containsKey(beneficiary)) {
-              Integer amountOwed =  creditMap.get(beneficiary) + loggedInUserNewBalance;
-                creditMap.put(beneficiary, amountOwed);
-            }
-            else
-            {
-                creditMap.put(beneficiary, loggedInUserNewBalance);
-            }
+        Integer amountDebitedForBeneficiary = debitFromLoggedInUser(amount, loggedInUserAccount, beneficiary);
 
-            beneficiaryNewBalance =  beneficiaryNewBalance + loggedInUserNewBalance;
-            accountService.update(beneficiaryAccount, beneficiaryNewBalance);
-            Map<User, Integer> beneficiaryCreditMap = beneficiaryAccount.getCreditMap();
-            if (beneficiaryCreditMap.containsKey(loggedInUser)) {
-                Integer amountOwed =  beneficiaryCreditMap.get(loggedInUser) + loggedInUserNewBalance;
-                beneficiaryCreditMap.put(loggedInUser, amountOwed);
+        creditToBeneficiary(amount, amountDebitedForBeneficiary, beneficiaryAccount);
+    }
+
+    private void creditToBeneficiary(Integer actualAmount, Integer receivedAmount, Account beneficaryAccount) {
+        Integer newBeneficiaryBalance = beneficaryAccount.getBalance() + receivedAmount;
+        Integer amountTobeSettled =  actualAmount - receivedAmount;
+        User loggedInUser = userService.getLoggedInUser();
+        Integer amountInDebt = beneficaryAccount.getCreditMap().get(loggedInUser);
+
+        if (amountInDebt!= null && amountInDebt != 0) {
+            if (receivedAmount >= 0) {
+                amountInDebt = 0;
+                newBeneficiaryBalance = newBeneficiaryBalance - receivedAmount;
             }
-            else
-            {
-                beneficiaryCreditMap.put(loggedInUser, Math.abs(loggedInUserNewBalance));
+            else{
+                amountInDebt =  amountInDebt + amountTobeSettled - receivedAmount;
+                newBeneficiaryBalance = newBeneficiaryBalance - receivedAmount;
+            }
+        }
+        else
+        {
+            amountInDebt = amountTobeSettled;
+        }
+
+        if (amountInDebt != 0) {
+            if(beneficaryAccount.getCreditMap().containsKey(loggedInUser)) {
+                Integer amountToBeSettled = beneficaryAccount.getCreditMap().get(loggedInUser);
+                beneficaryAccount.getCreditMap().put(loggedInUser, amountToBeSettled - amountInDebt);
+            }
+            else {
+                beneficaryAccount.getCreditMap().put(loggedInUser, amountTobeSettled);
             }
         }
         else {
-            Map<User, Integer> beneficiaryCreditMap = beneficiaryAccount.getCreditMap();
-            if (beneficiaryCreditMap.containsKey(loggedInUser)) {
-                Integer amountOwed = beneficiaryCreditMap.get(loggedInUser) + amount;
-                if (amountOwed < 0) {
-                    beneficiaryCreditMap.put(loggedInUser, amountOwed);
-                    beneficiaryNewBalance =  beneficiaryNewBalance - amount ;
-                }
-                else {
-                    beneficiaryCreditMap.remove(loggedInUser);
-                    beneficiaryNewBalance = beneficiaryNewBalance - amount + amountOwed;
-                }
-            }
-
-            Map<User, Integer> creditMap = loggedInUserAccount.getCreditMap();
-            if (creditMap.containsKey(beneficiary)) {
-                Integer amountOwed =  creditMap.get(beneficiary) - amount;
-                if (amountOwed <= 0) {
-                    creditMap.remove(beneficiary);
-                    loggedInUserNewBalance =  loggedInUserNewBalance + amount + amountOwed;
-
-                }
-                else{
-                    creditMap.put(beneficiary, amountOwed);
-                    loggedInUserNewBalance =  loggedInUserNewBalance + amount;
-
-                }
-            }
-            accountService.update(loggedInUserAccount, loggedInUserNewBalance);
-            accountService.update(beneficiaryAccount, beneficiaryNewBalance);
+            beneficaryAccount.getCreditMap().remove(loggedInUser);
         }
+        accountService.update(beneficaryAccount, newBeneficiaryBalance);
     }
 
-    private void validate(String userName, User loggedInUser, Account account) {
-        if (Objects.equals(loggedInUser.getUserName(), userName)) {
-            throw new BusinessException("Invalid operation");
+    private Integer debitFromLoggedInUser(Integer amount, Account loggedInUserAccount, User beneficiary) {
+        Integer newLoggedInUserBalance = loggedInUserAccount.getBalance() - amount;
+        Integer pendingAmountToBeneficiary = loggedInUserAccount.getCreditMap().get(beneficiary);
+
+        Integer amountSettled;
+        Integer amountInDebt;
+
+        if(pendingAmountToBeneficiary != null){
+            if(Math.abs(pendingAmountToBeneficiary) > amount ) {
+                amountSettled = amount;
+                amountInDebt = -amount;
+                newLoggedInUserBalance = loggedInUserAccount.getBalance();
+            }
+           else {
+               amountSettled = amount - pendingAmountToBeneficiary;
+               amountInDebt = 0;
+               newLoggedInUserBalance = loggedInUserAccount.getBalance() - amountSettled;
+            }
         }
-        if (account.getBalance() <= 0) {
-            throw new BusinessException("No enough funds to transfer");
+        else if(newLoggedInUserBalance < 0) {
+            amountSettled = loggedInUserAccount.getBalance();
+            amountInDebt = newLoggedInUserBalance;
+            newLoggedInUserBalance = 0;
         }
+        else{
+            amountSettled = amount;
+            amountInDebt = 0;
+        }
+
+        if (amountInDebt != 0) {
+            if(loggedInUserAccount.getCreditMap().containsKey(beneficiary)) {
+                Integer amountToBeSettled = loggedInUserAccount.getCreditMap().get(beneficiary);
+                loggedInUserAccount.getCreditMap().put(beneficiary, amountToBeSettled + amountInDebt);
+            }
+            else {
+                loggedInUserAccount.getCreditMap().put(beneficiary, amountInDebt);
+            }
+        }
+        else {
+            loggedInUserAccount.getCreditMap().remove(beneficiary);
+        }
+
+        accountService.update(loggedInUserAccount, newLoggedInUserBalance);
+        return amountSettled;
     }
+
 
     private Integer calculateNewBalance(TransactionType transactionType, Integer amount, Account account) {
-        if(transactionType == TransactionType.CREDIT) {
+        if (transactionType == TransactionType.CREDIT) {
             return account.getBalance() + amount;
         }
         return account.getBalance() - amount;
