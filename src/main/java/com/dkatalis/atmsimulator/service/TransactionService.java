@@ -69,25 +69,28 @@ public class TransactionService {
         creditToBeneficiary(amount, amountDebitedForBeneficiary, beneficiaryAccount);
     }
 
+
     private void creditToBeneficiary(Integer actualAmount, Integer receivedAmount, Account beneficaryAccount) {
         User loggedInUser = userService.getLoggedInUser();
         Integer beneficiaryBalance = beneficaryAccount.getBalance();
         Integer pendingAmountFromSource = beneficaryAccount.getCreditMap().get(loggedInUser);
 
-        if (pendingAmountFromSource != null && pendingAmountFromSource > 0) {
-            if (Math.abs(pendingAmountFromSource) > receivedAmount) {
-                pendingAmountFromSource = pendingAmountFromSource - receivedAmount;
-            } else {
-                beneficiaryBalance = beneficiaryBalance + receivedAmount;
-                pendingAmountFromSource = 0;
+        if(pendingAmountFromSource != null && pendingAmountFromSource != 0) {
+            if (pendingAmountFromSource > 0) {
+                if (Math.abs(pendingAmountFromSource) > receivedAmount) {
+                    pendingAmountFromSource = pendingAmountFromSource - receivedAmount;
+                } else {
+                    beneficiaryBalance = beneficiaryBalance + receivedAmount;
+                    pendingAmountFromSource = 0;
+                }
             }
-        }
-        else if (pendingAmountFromSource != null && pendingAmountFromSource < 0) {
-            if(Math.abs(pendingAmountFromSource) >  actualAmount){
-                pendingAmountFromSource = pendingAmountFromSource + actualAmount;
-            }else {
-                beneficiaryBalance = actualAmount + pendingAmountFromSource;
-                pendingAmountFromSource = 0;
+            else {
+                if(Math.abs(pendingAmountFromSource) >  actualAmount){
+                    pendingAmountFromSource = pendingAmountFromSource + actualAmount;
+                }else {
+                    beneficiaryBalance = actualAmount + pendingAmountFromSource;
+                    pendingAmountFromSource = 0;
+                }
             }
         }
         else {
@@ -100,11 +103,7 @@ public class TransactionService {
             }
         }
 
-        if (pendingAmountFromSource != 0) {
-            beneficaryAccount.getCreditMap().put(loggedInUser, pendingAmountFromSource);
-        } else {
-            beneficaryAccount.getCreditMap().remove(loggedInUser);
-        }
+        updatedCreditMap (pendingAmountFromSource, beneficaryAccount, loggedInUser);
         accountService.update(beneficaryAccount, beneficiaryBalance);
     }
 
@@ -144,14 +143,18 @@ public class TransactionService {
             }
         }
 
-        if (pendingAmountToBeneficiary != 0) {
-            loggedInUserAccount.getCreditMap().put(beneficiary, pendingAmountToBeneficiary);
-        } else {
-            loggedInUserAccount.getCreditMap().remove(beneficiary);
-        }
-
+        updatedCreditMap (pendingAmountToBeneficiary, loggedInUserAccount, beneficiary);
         accountService.update(loggedInUserAccount, loggedInUserAccountBalance);
         return debitedAmount;
+    }
+
+    private void updatedCreditMap(Integer pendingAmount, Account account, User user) {
+        if (pendingAmount != 0) {
+            account.getCreditMap().put(user, pendingAmount);
+        } else {
+            account.getCreditMap().remove(user);
+        }
+
     }
 
 
