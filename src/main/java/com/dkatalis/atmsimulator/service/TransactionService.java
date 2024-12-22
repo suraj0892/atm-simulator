@@ -78,7 +78,7 @@ public class TransactionService {
             if (Math.abs(pendingAmountFromSource) > receivedAmount) {
                 pendingAmountFromSource = pendingAmountFromSource - receivedAmount;
             } else {
-                beneficiaryBalance = beneficiaryBalance + receivedAmount - pendingAmountFromSource;
+                beneficiaryBalance = beneficiaryBalance + receivedAmount;
                 pendingAmountFromSource = 0;
             }
         }
@@ -119,7 +119,7 @@ public class TransactionService {
                 loggedInUserAccountBalance = 0;
             } else {
                 debitedAmount = Math.abs(pendingAmountToBeneficiary);
-                loggedInUserAccountBalance = amount - pendingAmountToBeneficiary;
+                loggedInUserAccountBalance = loggedInUserAccountBalance + pendingAmountToBeneficiary;
                 pendingAmountToBeneficiary = 0;
             }
         } else if(pendingAmountToBeneficiary != null && pendingAmountToBeneficiary > 0) {
