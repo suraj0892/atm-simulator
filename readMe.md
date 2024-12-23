@@ -13,6 +13,7 @@ This Application simulates an ATM (Automated teller machine).
 
 * `logout` - Logs out of the current customer
 
+* `exit` - exits CLI , can start new using `start.sh`
 ## PreRequisite
 If you have cloned the project newly run `./gradlew clean build` to download necessary dependencies.
 
@@ -25,6 +26,7 @@ Once Updated input , use `./start.sh` task to execute the application.
 To run all the tests in application use gradle task `./gradlew test`
 
 ## Sample input and output
+Tip : use command `exit` from CLI
 
 ```bash
 
