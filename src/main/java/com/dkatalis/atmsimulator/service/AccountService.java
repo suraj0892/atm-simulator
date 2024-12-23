@@ -43,5 +43,4 @@ public class AccountService {
         accountRepository.update(outdatedAccount, updatedAccount);
     }
 
-
 }
