@@ -47,7 +47,7 @@ public class TransactionService {
         Account userAccount = accountService.getAccount(loggedInUser);
         Integer newBalance = calculateNewBalance(TransactionType.DEBIT, amount, userAccount);
 
-        if (userAccount.getBalance() <= 0 || newBalance <= 0) {
+        if (userAccount.getBalance() <= 0 || newBalance < 0) {
             throw new BusinessException("No enough funds to withdraw");
         }
         accountService.update(userAccount, newBalance);
@@ -57,15 +57,17 @@ public class TransactionService {
     public void transfer(String userName, Integer amount) {
         User loggedInUser = userService.getLoggedInUser();
         Account loggedInUserAccount = accountService.getAccount(loggedInUser);
+
         if (loggedInUser.getUserName().equals(userName)) {
             throw new BusinessException("Invalid operation");
+        }
+
+        if (loggedInUserAccount.getBalance() <= 0) {
+            throw new BusinessException("No Enough Funds to transfer exception");
         }
         User beneficiary = userService.getUserByUserName(userName);
         Account beneficiaryAccount = accountService.getAccount(beneficiary);
 
-        if (loggedInUserAccount.getBalance() < 0) {
-            throw new BusinessException("No Enough Funds to transfer exception");
-        }
 
         Integer amountDebitedForBeneficiary = debitFromLoggedInUser(amount, loggedInUserAccount, beneficiary);
 
