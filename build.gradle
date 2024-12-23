@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'application'
 }
 
 group 'org.example'
@@ -10,10 +11,24 @@ repositories {
 }
 
 dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
+    implementation 'org.junit.jupiter:junit-jupiter:5.7.0'
+    testImplementation 'org.mockito:mockito-core:3.12.4'
+    testImplementation 'org.mockito:mockito-inline:3.12.4'
+    testImplementation 'org.mockito:mockito-junit-jupiter:3.12.4'
+    testImplementation 'org.assertj:assertj-core:3.24.2'
 }
+
+application {
+    mainClassName = 'com.dkatalis.atmsimulator.AtmSimulatorApplication'
+}
+
 
 test {
     useJUnitPlatform()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
