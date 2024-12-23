@@ -40,12 +40,4 @@ public class Account {
         return Objects.hash(user);
     }
 
-    @Override
-    public String toString() {
-        return "Account{" +
-                "user=" + user +
-                ", balance=" + balance +
-                ", creditMap=" + creditMap +
-                '}';
-    }
 }

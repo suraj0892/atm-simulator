@@ -3,6 +3,7 @@ package com.dkatalis.atmsimulator;
 import com.dkatalis.atmsimulator.repository.AccountRepository;
 import com.dkatalis.atmsimulator.repository.UserRepository;
 import com.dkatalis.atmsimulator.service.AccountService;
+import com.dkatalis.atmsimulator.service.PrintService;
 import com.dkatalis.atmsimulator.service.TransactionService;
 import com.dkatalis.atmsimulator.service.UserService;
 
@@ -18,6 +19,7 @@ public class AtmSimulatorApplication {
         final AccountService accountService = new AccountService(accountRepository);
         final UserService userService = new UserService(userRepository, accountService);
         final TransactionService transactionService = new TransactionService(userService, accountService);
+        final PrintService printService = new PrintService(userService, accountService);
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
@@ -34,8 +36,8 @@ public class AtmSimulatorApplication {
                 case "login":
                     if (commandParts.length == 2) {
                         userService.login(commandParts[1]);
-                        userService.printWelcomeMessage();
-                        userService.printAccountStatement();
+                        printService.printWelcomeMessage();
+                        printService.printAccountStatement();
                     } else {
                         System.out.println("Usage: login [name]");
                     }
@@ -45,7 +47,7 @@ public class AtmSimulatorApplication {
                         try {
                             Integer amount = Integer.parseInt(commandParts[1]);
                             transactionService.deposit(amount);
-                            userService.printAccountStatement();
+                            printService.printAccountStatement();
                         } catch (NumberFormatException e) {
                             System.out.println("Invalid amount.");
                         }
@@ -58,7 +60,7 @@ public class AtmSimulatorApplication {
                         try {
                             Integer amount = Integer.parseInt(commandParts[1]);
                             transactionService.withdraw(amount);
-                            userService.printAccountStatement();
+                            printService.printAccountStatement();
                         } catch (NumberFormatException e) {
                             System.out.println("Invalid amount.");
                         }
@@ -71,7 +73,7 @@ public class AtmSimulatorApplication {
                         try {
                             Integer amount = Integer.parseInt(commandParts[2]);
                             transactionService.transfer(commandParts[1], amount);
-                            userService.printAccountStatement();
+                            printService.printAccountStatement();
                         } catch (NumberFormatException e) {
                             System.out.println("Invalid amount.");
                         }

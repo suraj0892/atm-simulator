@@ -1,12 +1,10 @@
 package com.dkatalis.atmsimulator.service;
 
-import com.dkatalis.atmsimulator.domain.Account;
 import com.dkatalis.atmsimulator.domain.User;
 import com.dkatalis.atmsimulator.exception.BusinessException;
 import com.dkatalis.atmsimulator.exception.UserNotFoundException;
 import com.dkatalis.atmsimulator.repository.UserRepository;
 
-import java.util.Map;
 import java.util.Optional;
 
 public class UserService {
@@ -25,7 +23,6 @@ public class UserService {
         return this.loggedInUser;
     }
 
-
     public void login(String userName) {
         validateForLogin();
         Optional<User> userOptional = userRepository.findByUserName(userName);
@@ -36,12 +33,6 @@ public class UserService {
             setCurrentUser(userRepository.save(user));
         }
         createAccountIfDoesNotExist();
-    }
-
-    private void createAccountIfDoesNotExist() {
-        if (!accountService.checkAccountIfPresentByUser(getLoggedInUser())) {
-            accountService.createAccount(getLoggedInUser());
-        }
     }
 
     public User getUserByUserName(String userName) {
@@ -59,14 +50,14 @@ public class UserService {
         return loggedOutUserName;
     }
 
+    public Integer getBalance() {
+        return accountService.getBalance(getLoggedInUser());
+    }
+
     private void validateForLogout() {
         if (getLoggedInUser() == null) {
             throw new BusinessException("No Active logged in user found");
         }
-    }
-
-    public Integer getBalance() {
-        return accountService.getBalance(getLoggedInUser());
     }
 
     private void validateForLogin() {
@@ -79,22 +70,9 @@ public class UserService {
         this.loggedInUser = user;
     }
 
-    public void printWelcomeMessage() {
-        System.out.println("Hello, " + getLoggedInUser().getUserName());
-    }
-
-    public void printAccountStatement() {
-        System.out.println("Your balance is $" + getBalance());
-
-        Account account = accountService.getAccount(getLoggedInUser());
-
-        for (Map.Entry<User, Integer> entry: account.getCreditMap().entrySet()) {
-            if (entry.getValue() < 0) {
-                System.out.println("Owed $" + Math.abs(entry.getValue()) + " to " + entry.getKey().getUserName());
-            }
-            else {
-                System.out.println("Owed $" + Math.abs(entry.getValue()) + " from " + entry.getKey().getUserName());
-            }
+    private void createAccountIfDoesNotExist() {
+        if (!accountService.checkAccountIfPresentByUser(getLoggedInUser())) {
+            accountService.createAccount(getLoggedInUser());
         }
     }
 }
