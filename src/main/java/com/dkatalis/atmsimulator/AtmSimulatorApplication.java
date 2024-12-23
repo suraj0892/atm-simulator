@@ -21,6 +21,7 @@ public class AtmSimulatorApplication {
         final TransactionService transactionService = new TransactionService(userService, accountService);
         final PrintService printService = new PrintService(userService, accountService);
         Scanner scanner = new Scanner(System.in);
+        System.out.println("Welcome to Dkatalis ATM \n");
 
         while (true) {
             System.out.print("$ ");

@@ -23,12 +23,15 @@ application {
     mainClassName = 'com.dkatalis.atmsimulator.AtmSimulatorApplication'
 }
 
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'com.dkatalis.atmsimulator.AtmSimulatorApplication'  // Ensure the Main-Class attribute is set
+        )
+    }
+}
 
 test {
     useJUnitPlatform()
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
