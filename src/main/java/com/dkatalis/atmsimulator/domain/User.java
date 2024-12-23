@@ -7,32 +7,27 @@ import java.util.UUID;
 public class User {
 
     private final String userName;
-    private final UUID userId;
 
     public User(String userName) {
         this.userName = userName;
-        this.userId = UUID.randomUUID();
     }
 
     public String getUserName() {
         return userName;
     }
 
-    public UUID getUserId() {
-        return userId;
-    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
-        return userId.equals(user.userId);
+        return userName.equals(user.userName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(userId);
+        return Objects.hash(userName);
     }
 
     @Override
