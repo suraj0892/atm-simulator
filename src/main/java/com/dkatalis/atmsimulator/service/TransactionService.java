@@ -56,15 +56,17 @@ public class TransactionService {
 
     public void transfer(String userName, Integer amount) {
         User loggedInUser = userService.getLoggedInUser();
-        Account loggedInUserAccount = accountService.getAccount(loggedInUser);
 
         if (loggedInUser.getUserName().equals(userName)) {
             throw new BusinessException("Invalid operation");
         }
 
-        if (loggedInUserAccount.getBalance() <= 0) {
-            throw new BusinessException("No Enough Funds to transfer exception");
+        if(userService.getBalance() <= 0) {
+            throw new BusinessException("No enough funds to transfer");
         }
+
+        Account loggedInUserAccount = accountService.getAccount(loggedInUser);
+
         User beneficiary = userService.getUserByUserName(userName);
         Account beneficiaryAccount = accountService.getAccount(beneficiary);
 

@@ -91,23 +91,10 @@ class TransactionServiceTest {
     @Test
     void transferAmount_givenBeneficiarySameAsLoggedInUser_exception() {
         User alice = getNewUser("Alice");
-        Account aliceAccount = getAccountForUser(alice, 50);
 
         doReturn(alice).when(userService).getLoggedInUser();
-        doReturn(aliceAccount).when(accountService).getAccount(alice);
 
         assertThrows(BusinessException.class, () -> transactionService.transfer("Alice", 100));
-    }
-
-    @Test
-    void transferAmount_givenLoggedInUserHasZeroBalance_exception() {
-        User alice = getNewUser("Alice");
-        Account aliceAccount = getAccountForUser(alice, 0);
-
-        doReturn(alice).when(userService).getLoggedInUser();
-        doReturn(aliceAccount).when(accountService).getAccount(alice);
-
-        assertThrows(BusinessException.class, () -> transactionService.transfer("Bob", 100));
     }
 
     @Test
@@ -124,6 +111,7 @@ class TransactionServiceTest {
         doReturn(bobAccount).when(accountService).getAccount(bob);
         doNothing().when(accountService).update(aliceAccount, 50);
         doNothing().when(accountService).update(bobAccount, 150);
+        doReturn(aliceAccount.getBalance()).when(userService).getBalance();
 
         transactionService.transfer("Bob", 50);
 
@@ -144,6 +132,8 @@ class TransactionServiceTest {
         doReturn(aliceAccount).when(accountService).getAccount(alice);
         doReturn(bob).when(userService).getUserByUserName("Bob");
         doReturn(bobAccount).when(accountService).getAccount(bob);
+        doReturn(aliceAccount.getBalance()).when(userService).getBalance();
+
         doNothing().when(accountService).update(aliceAccount, 0);
         doNothing().when(accountService).update(bobAccount, 200);
 
@@ -171,6 +161,7 @@ class TransactionServiceTest {
         doReturn(bobAccount).when(accountService).getAccount(bob);
         doReturn(alice).when(userService).getUserByUserName("Alice");
         doReturn(aliceAccount).when(accountService).getAccount(alice);
+        doReturn(bobAccount.getBalance()).when(userService).getBalance();
 
         doNothing().when(accountService).update(aliceAccount, 0);
         doNothing().when(accountService).update(bobAccount, 100);
@@ -198,6 +189,7 @@ class TransactionServiceTest {
         doReturn(bobAccount).when(accountService).getAccount(bob);
         doReturn(alice).when(userService).getUserByUserName("Alice");
         doReturn(aliceAccount).when(accountService).getAccount(alice);
+        doReturn(bobAccount.getBalance()).when(userService).getBalance();
 
         doNothing().when(accountService).update(aliceAccount, 50);
         doNothing().when(accountService).update(bobAccount, 150);
@@ -209,6 +201,63 @@ class TransactionServiceTest {
 
         assertNull( aliceAccount.getCreditMap().get(bob));
         assertNull( bobAccount.getCreditMap().get(alice));
+    }
+
+    @Test
+    void transferAmount_givenAmountInDebtToBeneficiaryDepositsAmount_success() {
+        User alice = getNewUser("Alice");
+        User bob = getNewUser("Bob");
+
+        Account aliceAccount = getAccountForUser(alice, 0);
+        aliceAccount.getCreditMap().put(bob, -70);
+        Account bobAccount = getAccountForUser(bob, 200);
+        bobAccount.getCreditMap().put(alice, 70);
+
+        doReturn(alice).when(userService).getLoggedInUser();
+        doReturn(aliceAccount).when(accountService).getAccount(alice);
+        doReturn(bob).when(userService).getUserByUserName("Bob");
+        doReturn(bobAccount).when(accountService).getAccount(bob);
+        doReturn(100).when(userService).getBalance();
+
+        transactionService.deposit(100);
+
+        assertNull(aliceAccount.getCreditMap().get(bob));
+        assertNull(bobAccount.getCreditMap().get(alice));
+    }
+
+    @Test
+    void transferAmount_givenAmountInDebtToBeneficiary_addPartialAmount_success() {
+        User alice = getNewUser("Alice");
+        User bob = getNewUser("Bob");
+
+        Account aliceAccount = getAccountForUser(alice, 0);
+        aliceAccount.getCreditMap().put(bob, -70);
+        Account bobAccount = getAccountForUser(bob, 200);
+        bobAccount.getCreditMap().put(alice, 70);
+
+        doReturn(alice).when(userService).getLoggedInUser();
+        doReturn(aliceAccount).when(accountService).getAccount(alice);
+        doReturn(bob).when(userService).getUserByUserName("Bob");
+        doReturn(bobAccount).when(accountService).getAccount(bob);
+        doReturn(30).when(userService).getBalance();
+
+        transactionService.deposit(30);
+
+        assertEquals( -40, aliceAccount.getCreditMap().get(bob));
+        assertEquals(40 , bobAccount.getCreditMap().get(alice));
+    }
+
+    @Test
+    void transferAmount_withInsufficientFunds_throwsException() {
+        User alice = getNewUser("Alice");
+
+        Account aliceAccount = getAccountForUser(alice, 0);
+
+        doReturn(alice).when(userService).getLoggedInUser();
+        doReturn(aliceAccount.getBalance()).when(userService).getBalance();
+
+        assertThrows(BusinessException.class, () -> transactionService.transfer("Bob", 50));
+
     }
 
     private User getNewUser(String userName) {
